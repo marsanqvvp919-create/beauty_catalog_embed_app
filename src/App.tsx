@@ -117,7 +117,7 @@ function getHandlingFee(subtotal: number, shippingFee: number) {
 }
 
 const SHEET_ENDPOINT =
-  "https://script.google.com/macros/s/AKfycbz8AWoi_kKz3Bm_IRuzNq9qFiZan-S-oF3O9OTGkyzxW5_5KmEqENnXszumQNTXf5YbgQ/exec";
+  "https://script.google.com/macros/s/AKfycbykDkcRG8jSNjQvrFFbjsIa9qjnmf0YTX0UyIz1dNSTaNqQ2PEocB7H38S8ldyFGslpTQ/exec";
 
 function formatYen(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return "-";
@@ -265,44 +265,50 @@ function DetailTable({ product }: { product: Product }) {
   ];
 
   return (
-    <div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-      <div className="grid grid-cols-1 border-b border-slate-200 xl:grid-cols-[0.82fr_1.18fr]">
+    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <div className="grid grid-cols-1 border-b border-slate-200 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="border-r-0 border-slate-200 bg-slate-50/70 xl:border-r">
-          <div className="bg-sky-600 px-4 py-3 text-lg font-bold text-white">主成分</div>
-          <div className="flex min-h-[168px] items-center px-4 py-5 text-[20px] font-semibold leading-tight tracking-tight text-slate-900 md:text-[22px] xl:text-[24px]">
+          <div className="bg-sky-600 px-4 py-3 text-base font-bold text-white">主成分</div>
+          <div className="flex min-h-[128px] items-center px-4 py-4 text-[18px] font-semibold leading-tight tracking-tight text-slate-900 md:text-[20px]">
             {product.ingredient || "-"}
           </div>
         </div>
 
         <div>
-          <div className="px-4 py-3 text-lg font-bold text-slate-900">価格</div>
+          <div className="px-4 py-3 text-base font-bold text-slate-900">価格</div>
           <div className="grid grid-cols-1 border-t border-slate-200 sm:grid-cols-3">
             {prices.map((price, index) => (
               <div
                 key={price.label}
-                className={`flex min-h-[168px] flex-col justify-between overflow-hidden bg-white p-3 text-center md:p-4 ${
+                className={`flex min-h-[128px] flex-col justify-between overflow-hidden bg-white p-3 text-center ${
                   index < prices.length - 1 ? "border-b border-slate-200 sm:border-b-0 sm:border-r" : ""
                 } border-slate-200`}
               >
                 <div
-                  className={`text-[12px] font-semibold leading-tight md:text-[13px] xl:text-sm ${
+                  className={`text-[12px] font-semibold leading-tight ${
                     price.accent ? "text-sky-600" : "text-slate-500"
                   }`}
                 >
                   {price.label}
                 </div>
-                <div className="flex min-h-[68px] items-center justify-center px-1">
+
+                <div className="flex min-h-[52px] items-center justify-center px-1">
                   <div
-                    className={`w-full text-center leading-none tracking-[-0.05em] ${
+                    className={`w-full text-center leading-none tracking-[-0.04em] ${
                       price.accent
-                        ? "text-[clamp(1.9rem,2.1vw,2.95rem)] font-bold text-sky-600"
-                        : "text-[clamp(1.72rem,1.8vw,2.45rem)] font-bold text-slate-900"
+                        ? "text-[clamp(1.7rem,2vw,2.5rem)] font-bold text-sky-600"
+                        : "text-[clamp(1.25rem,1.7vw,2rem)] font-bold text-slate-900"
                     }`}
                   >
-                    {"value" in price ? formatYen(price.value) : price.price}
+                    {"value" in price
+                      ? formatYen(price.value)
+                      : price.price === "-"
+                        ? "-"
+                        : price.price}
                   </div>
                 </div>
-                <div className="mx-auto max-w-[92px] text-[10px] leading-snug text-slate-400 md:max-w-none md:text-[11px] xl:text-xs">
+
+                <div className="mx-auto max-w-[96px] text-[10px] leading-snug text-slate-400">
                   税別・1箱あたり
                 </div>
               </div>
@@ -313,30 +319,30 @@ function DetailTable({ product }: { product: Product }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2">
         <div className="border-b border-r-0 border-slate-200 md:border-b-0 md:border-r">
-          <div className="grid grid-cols-[132px_1fr] md:grid-cols-[140px_1fr]">
-            <div className="bg-sky-600 px-4 py-3 text-lg font-bold text-white">規格</div>
-            <div className="px-4 py-3 text-lg text-slate-900">{product.spec || "-"}</div>
+          <div className="grid grid-cols-[120px_1fr] md:grid-cols-[132px_1fr]">
+            <div className="bg-sky-600 px-4 py-3 text-base font-bold text-white">規格</div>
+            <div className="px-4 py-3 text-base text-slate-900">{product.spec || "-"}</div>
           </div>
         </div>
         <div>
-          <div className="grid grid-cols-[132px_1fr] md:grid-cols-[140px_1fr]">
-            <div className="bg-sky-600 px-4 py-3 text-lg font-bold text-white">容量</div>
-            <div className="px-4 py-3 text-lg text-slate-900">{product.volume || "-"}</div>
+          <div className="grid grid-cols-[120px_1fr] md:grid-cols-[132px_1fr]">
+            <div className="bg-sky-600 px-4 py-3 text-base font-bold text-white">容量</div>
+            <div className="px-4 py-3 text-base text-slate-900">{product.volume || "-"}</div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 border-t border-slate-200 md:grid-cols-2">
         <div className="border-b border-r-0 border-slate-200 md:border-b-0 md:border-r">
-          <div className="grid grid-cols-[132px_1fr] md:grid-cols-[140px_1fr]">
-            <div className="bg-sky-600 px-4 py-3 text-lg font-bold text-white">製造国</div>
-            <div className="px-4 py-3 text-lg text-slate-900">{product.country || "-"}</div>
+          <div className="grid grid-cols-[120px_1fr] md:grid-cols-[132px_1fr]">
+            <div className="bg-sky-600 px-4 py-3 text-base font-bold text-white">製造国</div>
+            <div className="px-4 py-3 text-base text-slate-900">{product.country || "-"}</div>
           </div>
         </div>
         <div>
-          <div className="grid grid-cols-[132px_1fr] md:grid-cols-[140px_1fr]">
-            <div className="bg-sky-600 px-4 py-3 text-lg font-bold text-white">メーカー</div>
-            <div className="px-4 py-3 text-lg text-slate-900">{product.manufacturer || "-"}</div>
+          <div className="grid grid-cols-[120px_1fr] md:grid-cols-[132px_1fr]">
+            <div className="bg-sky-600 px-4 py-3 text-base font-bold text-white">メーカー</div>
+            <div className="px-4 py-3 text-base text-slate-900">{product.manufacturer || "-"}</div>
           </div>
         </div>
       </div>
@@ -569,46 +575,58 @@ function ProductCard({
   return (
     <motion.button
       layout
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.18 }}
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.16 }}
       onClick={onClick}
-      className="group overflow-hidden rounded-[30px] border border-slate-200 bg-white text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
+      className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_36px_rgba(15,23,42,0.08)]"
     >
-      <div className="relative aspect-[1/1] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-sky-50/70 to-transparent" />
+      <div className="relative h-44 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 md:h-48">
+        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-sky-50/60 to-transparent" />
         <img
           src={product.image}
           alt={product.nameJa}
-          className="relative z-10 h-full w-full object-contain p-5 transition duration-300 group-hover:scale-[1.03]"
+          className="relative z-10 h-full w-full object-contain p-4 transition duration-300 group-hover:scale-[1.02]"
         />
       </div>
-      <div className="p-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <span className="text-sm text-slate-400">{getCategoryLabel(product.category)}</span>
+
+      <div className="p-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="text-xs text-slate-400">{getCategoryLabel(product.category)}</span>
           {product.status ? <ProductBadge tone="subtle">{product.status}</ProductBadge> : null}
         </div>
-        <h3 className="line-clamp-2 min-h-[3.5rem] text-[22px] font-semibold tracking-tight text-slate-900 xl:text-[24px]">
+
+        <h3 className="line-clamp-2 min-h-[2.8rem] text-[18px] font-semibold leading-snug tracking-tight text-slate-900">
           {product.nameJa}
         </h3>
-        {product.nameEn ? <p className="mt-1 line-clamp-1 text-sm text-slate-500">{product.nameEn}</p> : null}
 
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3">
+        {product.nameEn ? (
+          <p className="mt-1 line-clamp-1 text-xs text-slate-500">{product.nameEn}</p>
+        ) : null}
+
+        <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-2.5">
           <div>
-            <div className="text-[11px] text-slate-400">主成分</div>
-            <div className="mt-1 line-clamp-1 text-sm font-medium text-slate-700">{product.ingredient || "-"}</div>
+            <div className="text-[10px] text-slate-400">主成分</div>
+            <div className="mt-1 line-clamp-1 text-xs font-medium text-slate-700">
+              {product.ingredient || "-"}
+            </div>
           </div>
           <div>
-            <div className="text-[11px] text-slate-400">メーカー</div>
-            <div className="mt-1 line-clamp-1 text-sm font-medium text-slate-700">{product.manufacturer || "-"}</div>
+            <div className="text-[10px] text-slate-400">メーカー</div>
+            <div className="mt-1 line-clamp-1 text-xs font-medium text-slate-700">
+              {product.manufacturer || "-"}
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-end justify-between gap-3">
+        <div className="mt-3 flex items-end justify-between gap-3">
           <div>
-            <div className="text-xs text-slate-400">1個-10個</div>
-            <div className="text-[28px] font-bold tracking-tight text-slate-900">{formatYen(product.priceSmall)}</div>
+            <div className="text-[10px] text-slate-400">1個-10個</div>
+            <div className="text-[24px] font-bold leading-none tracking-tight text-slate-900">
+              {formatYen(product.priceSmall)}
+            </div>
           </div>
-          <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 transition group-hover:border-slate-900 group-hover:bg-slate-900 group-hover:text-white">
+
+          <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-600 transition group-hover:border-slate-900 group-hover:bg-slate-900 group-hover:text-white">
             詳細を見る
           </div>
         </div>
@@ -1000,7 +1018,9 @@ export default function App() {
   const categoryCounts = useMemo(() => {
     return categories.reduce<Record<string, number>>((acc, currentCategory) => {
       acc[currentCategory] =
-        currentCategory === "all" ? products.length : products.filter((item) => item.category === currentCategory).length;
+        currentCategory === "all"
+          ? products.length
+          : products.filter((item) => item.category === currentCategory).length;
       return acc;
     }, {});
   }, [categories, products]);
@@ -1030,7 +1050,9 @@ export default function App() {
     rows.sort((a, b) => {
       if (sortKey === "name-asc") return a.nameJa.localeCompare(b.nameJa, "ja");
       if (sortKey === "name-desc") return b.nameJa.localeCompare(a.nameJa, "ja");
-      if (sortKey === "price-asc") return (a.priceSmall ?? Number.MAX_SAFE_INTEGER) - (b.priceSmall ?? Number.MAX_SAFE_INTEGER);
+      if (sortKey === "price-asc") {
+        return (a.priceSmall ?? Number.MAX_SAFE_INTEGER) - (b.priceSmall ?? Number.MAX_SAFE_INTEGER);
+      }
       return (b.priceSmall ?? -1) - (a.priceSmall ?? -1);
     });
 
@@ -1097,9 +1119,15 @@ export default function App() {
         <div className="mb-8 overflow-hidden rounded-[36px] border border-slate-200 bg-white p-5 shadow-[0_14px_44px_rgba(15,23,42,0.05)] md:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="text-sm font-semibold tracking-[0.24em] text-slate-400">BEAUTY PRODUCT CATALOG</div>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">美容製剤カタログ</h1>
-              <p className="mt-2 max-w-3xl text-slate-500">商品タップで詳細確認。カテゴリ・価格で比較しながら見積もり一覧へ追加し、そのまま依頼送信まで進められます。</p>
+              <div className="text-sm font-semibold tracking-[0.24em] text-slate-400">
+                BEAUTY PRODUCT CATALOG
+              </div>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+                美容製剤カタログ
+              </h1>
+              <p className="mt-2 max-w-3xl text-slate-500">
+                商品タップで詳細確認。カテゴリ・価格で比較しながら見積もり一覧へ追加し、そのまま依頼送信まで進められます。
+              </p>
             </div>
 
             <button
@@ -1179,7 +1207,9 @@ export default function App() {
           <div>
             <div className="mb-5 flex flex-col gap-3 rounded-[28px] border border-slate-200 bg-white px-5 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.03)] sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-sm font-semibold tracking-[0.18em] text-slate-400">CATALOG OVERVIEW</div>
+                <div className="text-sm font-semibold tracking-[0.18em] text-slate-400">
+                  CATALOG OVERVIEW
+                </div>
                 <div className="mt-1 text-xl font-bold tracking-tight text-slate-950">
                   {category === "all" ? "全商品一覧" : getCategoryLabel(category)}
                 </div>
@@ -1198,16 +1228,17 @@ export default function App() {
                 </ProductBadge>
               </div>
             </div>
+
             {loading ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {Array.from({ length: 8 }).map((_, index) => (
-                  <div key={index} className="overflow-hidden rounded-[28px] border border-slate-200 bg-white">
-                    <div className="aspect-square animate-pulse bg-slate-100" />
-                    <div className="space-y-3 p-5">
+                  <div key={index} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
+                    <div className="h-44 animate-pulse bg-slate-100 md:h-48" />
+                    <div className="space-y-2 p-4">
                       <div className="h-3 w-20 animate-pulse rounded bg-slate-100" />
-                      <div className="h-6 w-3/4 animate-pulse rounded bg-slate-100" />
+                      <div className="h-5 w-3/4 animate-pulse rounded bg-slate-100" />
                       <div className="h-4 w-1/2 animate-pulse rounded bg-slate-100" />
-                      <div className="h-8 w-1/3 animate-pulse rounded bg-slate-100" />
+                      <div className="h-7 w-1/3 animate-pulse rounded bg-slate-100" />
                     </div>
                   </div>
                 ))}
@@ -1215,7 +1246,7 @@ export default function App() {
             ) : filtered.length === 0 ? (
               <EmptyState />
             ) : (
-              <motion.div layout className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <motion.div layout className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {filtered.map((product) => (
                   <ProductCard key={product.id} product={product} onClick={() => setSelected(product)} />
                 ))}
@@ -1280,7 +1311,9 @@ export default function App() {
           </div>
           <div>
             <div className="text-[10px] font-semibold tracking-[0.14em] text-slate-400">合計見積もり</div>
-            <div className="text-sm font-bold text-slate-900">{totalQuoteItems}点 / {formatYen(totalQuoteAmount)}</div>
+            <div className="text-sm font-bold text-slate-900">
+              {totalQuoteItems}点 / {formatYen(totalQuoteAmount)}
+            </div>
           </div>
         </button>
       ) : null}
