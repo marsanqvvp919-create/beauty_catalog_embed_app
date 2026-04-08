@@ -13,6 +13,7 @@ import {
   Send,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "./lib/supabase";
 
 type SortKey = "name-asc" | "name-desc" | "price-asc" | "price-desc";
 type CategoryKey = "all" | string;
@@ -116,9 +117,6 @@ function getHandlingFee(subtotal: number, shippingFee: number) {
   return Math.round((subtotal + shippingFee) * 0.01);
 }
 
-const SHEET_ENDPOINT =
-  "https://script.google.com/macros/s/AKfycbykDkcRG8jSNjQvrFFbjsIa9qjnmf0YTX0UyIz1dNSTaNqQ2PEocB7H38S8ldyFGslpTQ/exec";
-
 function formatYen(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return "-";
   return new Intl.NumberFormat("ja-JP", {
@@ -133,80 +131,6 @@ function parseMaybeNumber(value: unknown): number | null {
   const normalized = String(value).replace(/[^0-9.-]/g, "");
   const n = Number(normalized);
   return Number.isFinite(n) ? n : null;
-}
-
-function normalizeRow(row: any): Product {
-  const price11To20 = parseMaybeNumber(row.price11To20 ?? row.price_11_20 ?? row["11個-20個"]);
-  const price21To30 = parseMaybeNumber(row.price21To30 ?? row.price_21_30 ?? row["21個-30個"]);
-  const price31To40 = parseMaybeNumber(row.price31To40 ?? row.price_31_40 ?? row["31個-40個"]);
-  const price41To50 = parseMaybeNumber(row.price41To50 ?? row.price_41_50 ?? row["41個-50個"]);
-  const price51To60 = parseMaybeNumber(row.price51To60 ?? row.price_51_60 ?? row["51個-60個"]);
-  const price61To70 = parseMaybeNumber(row.price61To70 ?? row.price_61_70 ?? row["61個-70個"]);
-  const price71To80 = parseMaybeNumber(row.price71To80 ?? row.price_71_80 ?? row["71個-80個"]);
-  const price81To90 = parseMaybeNumber(row.price81To90 ?? row.price_81_90 ?? row["81個-90個"]);
-  const price91To99 = parseMaybeNumber(row.price91To99 ?? row.price_91_99 ?? row["91個-99個"]);
-
-  return {
-    id: String(row.id ?? row.ID ?? crypto.randomUUID()),
-    nameJa: String(row.nameJa ?? row.商品名 ?? ""),
-    nameEn: row.nameEn ?? row.name ?? row.英語名 ?? "",
-    category: String(row.category ?? row.カテゴリ ?? "その他"),
-    brand: row.brand ?? row.ブランド ?? "",
-    ingredient: row.ingredient ?? row.主成分 ?? "",
-    spec: row.spec ?? row.規格 ?? "",
-    volume: row.volume ?? row.容量 ?? "",
-    manufacturer: row.manufacturer ?? row.メーカー ?? "",
-    country: row.country ?? row.製造国 ?? "",
-    priceSmall: parseMaybeNumber(row.priceSmall ?? row["1個-10個"] ?? row.price_1_10),
-    price11To20,
-    price21To30,
-    price31To40,
-    price41To50,
-    price51To60,
-    price61To70,
-    price71To80,
-    price81To90,
-    price91To99,
-    priceMedium:
-      parseMaybeNumber(row.priceMedium ?? row["10個-99個"] ?? row.price_10_99) ??
-      price11To20 ??
-      price21To30 ??
-      price31To40 ??
-      price41To50 ??
-      price51To60 ??
-      price61To70 ??
-      price71To80 ??
-      price81To90 ??
-      price91To99,
-    priceLarge: parseMaybeNumber(row.priceLarge ?? row["100個以上"] ?? row.price_100_plus),
-    image: String(row.image ?? row.画像 ?? "https://placehold.co/900x900?text=No+Image"),
-    gallery: Array.isArray(row.gallery)
-      ? row.gallery.filter(Boolean)
-      : String(row.gallery ?? row.ギャラリー ?? "")
-          .split(",")
-          .map((v) => v.trim())
-          .filter(Boolean),
-    description: row.description ?? row.説明 ?? "",
-    status: row.status ?? row.状態 ?? "取扱中",
-    tags: Array.isArray(row.tags)
-      ? row.tags.filter(Boolean)
-      : String(row.tags ?? row.タグ ?? "")
-          .split(",")
-          .map((v) => v.trim())
-          .filter(Boolean),
-    sortLetter: String(row.sortLetter ?? row.頭文字 ?? row.nameJa?.[0] ?? "").toUpperCase(),
-  };
-}
-
-async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch(SHEET_ENDPOINT, { cache: "no-store" });
-  if (!res.ok) throw new Error("商品データの取得に失敗しました。");
-  const data = await res.json();
-
-  if (Array.isArray(data?.rows)) return data.rows.map(normalizeRow);
-  if (Array.isArray(data)) return data.map(normalizeRow);
-
-  throw new Error("データ形式が正しくありません。rows配列または配列を返してください。");
 }
 
 function ProductBadge({
@@ -257,6 +181,95 @@ function getUnitPrice(product: Product, quantity: number) {
   );
 }
 
+async function fetchProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select(`
+      id,
+      nameja,
+      nameen,
+      category,
+      brand,
+      ingredient,
+      spec,
+      volume,
+      manufacturer,
+      country,
+      price_1_10,
+      price_11_20,
+      price_21_30,
+      price_31_40,
+      price_41_50,
+      price_51_60,
+      price_61_70,
+      price_71_80,
+      price_81_90,
+      price_91_99,
+      price_100_plus,
+      image,
+      gallery,
+      description,
+      status,
+      tags,
+      sortletter
+    `)
+    .order("nameja", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message || "商品データの取得に失敗しました。");
+  }
+
+  return (data ?? []).map((row: any) => ({
+    id: String(row.id),
+    nameJa: String(row.nameja ?? ""),
+    nameEn: row.nameen ?? "",
+    category: String(row.category ?? "その他"),
+    brand: row.brand ?? "",
+    ingredient: row.ingredient ?? "",
+    spec: row.spec ?? "",
+    volume: row.volume ?? "",
+    manufacturer: row.manufacturer ?? "",
+    country: row.country ?? "",
+    priceSmall: parseMaybeNumber(row.price_1_10),
+    price11To20: parseMaybeNumber(row.price_11_20),
+    price21To30: parseMaybeNumber(row.price_21_30),
+    price31To40: parseMaybeNumber(row.price_31_40),
+    price41To50: parseMaybeNumber(row.price_41_50),
+    price51To60: parseMaybeNumber(row.price_51_60),
+    price61To70: parseMaybeNumber(row.price_61_70),
+    price71To80: parseMaybeNumber(row.price_71_80),
+    price81To90: parseMaybeNumber(row.price_81_90),
+    price91To99: parseMaybeNumber(row.price_91_99),
+    priceMedium:
+      parseMaybeNumber(row.price_11_20) ??
+      parseMaybeNumber(row.price_21_30) ??
+      parseMaybeNumber(row.price_31_40) ??
+      parseMaybeNumber(row.price_41_50) ??
+      parseMaybeNumber(row.price_51_60) ??
+      parseMaybeNumber(row.price_61_70) ??
+      parseMaybeNumber(row.price_71_80) ??
+      parseMaybeNumber(row.price_81_90) ??
+      parseMaybeNumber(row.price_91_99),
+    priceLarge: parseMaybeNumber(row.price_100_plus),
+    image: String(row.image ?? "https://placehold.co/900x900?text=No+Image"),
+    gallery: Array.isArray(row.gallery)
+      ? row.gallery.filter(Boolean)
+      : String(row.gallery ?? "")
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean),
+    description: row.description ?? "",
+    status: row.status ?? "取扱中",
+    tags: Array.isArray(row.tags)
+      ? row.tags.filter(Boolean)
+      : String(row.tags ?? "")
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean),
+    sortLetter: String(row.sortletter ?? "").toUpperCase(),
+  }));
+}
+
 function DetailTable({ product }: { product: Product }) {
   const prices = [
     { label: "100個以上", value: product.priceLarge, accent: true },
@@ -269,7 +282,7 @@ function DetailTable({ product }: { product: Product }) {
       <div className="grid grid-cols-1 border-b border-slate-200 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="border-r-0 border-slate-200 bg-slate-50/70 xl:border-r">
           <div className="bg-sky-600 px-4 py-3 text-base font-bold text-white">主成分</div>
-          <div className="flex min-h-[128px] items-center px-4 py-4 text-[18px] font-semibold leading-tight tracking-tight text-slate-900 md:text-[20px]">
+          <div className="notranslate flex min-h-[128px] items-center px-4 py-4 text-[18px] font-semibold leading-tight tracking-tight text-slate-900 md:text-[20px]">
             {product.ingredient || "-"}
           </div>
         </div>
@@ -300,11 +313,7 @@ function DetailTable({ product }: { product: Product }) {
                         : "text-[clamp(1.25rem,1.7vw,2rem)] font-bold text-slate-900"
                     }`}
                   >
-                    {"value" in price
-                      ? formatYen(price.value)
-                      : price.price === "-"
-                        ? "-"
-                        : price.price}
+                    {"value" in price ? formatYen(price.value) : "数により異なる"}
                   </div>
                 </div>
 
@@ -342,7 +351,7 @@ function DetailTable({ product }: { product: Product }) {
         <div>
           <div className="grid grid-cols-[120px_1fr] md:grid-cols-[132px_1fr]">
             <div className="bg-sky-600 px-4 py-3 text-base font-bold text-white">メーカー</div>
-            <div className="px-4 py-3 text-base text-slate-900">{product.manufacturer || "-"}</div>
+            <div className="notranslate px-4 py-3 text-base text-slate-900">{product.manufacturer || "-"}</div>
           </div>
         </div>
       </div>
@@ -447,10 +456,10 @@ function ProductModal({
 
               <div className="mb-6">
                 <p className="text-sm font-medium tracking-[0.24em] text-slate-400">PRODUCT DETAIL</p>
-                <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+                <h2 className="notranslate mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
                   {product.nameJa}
                 </h2>
-                {product.nameEn ? <p className="mt-2 text-lg text-slate-500">{product.nameEn}</p> : null}
+                {product.nameEn ? <p className="notranslate mt-2 text-lg text-slate-500">{product.nameEn}</p> : null}
               </div>
 
               <DetailTable product={product} />
@@ -580,7 +589,7 @@ function ProductCard({
       onClick={onClick}
       className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_36px_rgba(15,23,42,0.08)]"
     >
-      <div className="relative h-44 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 md:h-48">
+      <div className="relative h-40 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 md:h-44">
         <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-sky-50/60 to-transparent" />
         <img
           src={product.image}
@@ -595,24 +604,24 @@ function ProductCard({
           {product.status ? <ProductBadge tone="subtle">{product.status}</ProductBadge> : null}
         </div>
 
-        <h3 className="line-clamp-2 min-h-[2.8rem] text-[18px] font-semibold leading-snug tracking-tight text-slate-900">
+        <h3 className="notranslate line-clamp-2 min-h-[2.8rem] text-[18px] font-semibold leading-snug tracking-tight text-slate-900">
           {product.nameJa}
         </h3>
 
         {product.nameEn ? (
-          <p className="mt-1 line-clamp-1 text-xs text-slate-500">{product.nameEn}</p>
+          <p className="notranslate mt-1 line-clamp-1 text-xs text-slate-500">{product.nameEn}</p>
         ) : null}
 
-        <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-2.5">
+        <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-2">
           <div>
             <div className="text-[10px] text-slate-400">主成分</div>
-            <div className="mt-1 line-clamp-1 text-xs font-medium text-slate-700">
+            <div className="notranslate mt-1 line-clamp-1 text-xs font-medium text-slate-700">
               {product.ingredient || "-"}
             </div>
           </div>
           <div>
             <div className="text-[10px] text-slate-400">メーカー</div>
-            <div className="mt-1 line-clamp-1 text-xs font-medium text-slate-700">
+            <div className="notranslate mt-1 line-clamp-1 text-xs font-medium text-slate-700">
               {product.manufacturer || "-"}
             </div>
           </div>
@@ -646,13 +655,8 @@ function isValidPhone(phone: string) {
 function validateQuoteRequestForm(form: QuoteRequestForm) {
   const errors: QuoteRequestErrors = {};
 
-  if (!form.clinicName.trim()) {
-    errors.clinicName = "クリニック名を入力してください。";
-  }
-
-  if (!form.contactName.trim()) {
-    errors.contactName = "担当者名を入力してください。";
-  }
+  if (!form.clinicName.trim()) errors.clinicName = "クリニック名を入力してください。";
+  if (!form.contactName.trim()) errors.contactName = "担当者名を入力してください。";
 
   if (!form.email.trim()) {
     errors.email = "メールアドレスを入力してください。";
@@ -983,7 +987,6 @@ export default function App() {
     email: "",
     phone: "",
   });
-
   const [showErrors, setShowErrors] = useState(false);
   const [showCartMobile, setShowCartMobile] = useState(false);
   const cartRef = useRef<HTMLDivElement | null>(null);
@@ -1043,6 +1046,7 @@ export default function App() {
         .filter(Boolean)
         .join(NEWLINE)
         .toLowerCase();
+
       const matchesQuery = !q || haystack.includes(q);
       return matchesCategory && matchesQuery;
     });
@@ -1050,9 +1054,7 @@ export default function App() {
     rows.sort((a, b) => {
       if (sortKey === "name-asc") return a.nameJa.localeCompare(b.nameJa, "ja");
       if (sortKey === "name-desc") return b.nameJa.localeCompare(a.nameJa, "ja");
-      if (sortKey === "price-asc") {
-        return (a.priceSmall ?? Number.MAX_SAFE_INTEGER) - (b.priceSmall ?? Number.MAX_SAFE_INTEGER);
-      }
+      if (sortKey === "price-asc") return (a.priceSmall ?? Number.MAX_SAFE_INTEGER) - (b.priceSmall ?? Number.MAX_SAFE_INTEGER);
       return (b.priceSmall ?? -1) - (a.priceSmall ?? -1);
     });
 
@@ -1119,12 +1121,8 @@ export default function App() {
         <div className="mb-8 overflow-hidden rounded-[36px] border border-slate-200 bg-white p-5 shadow-[0_14px_44px_rgba(15,23,42,0.05)] md:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="text-sm font-semibold tracking-[0.24em] text-slate-400">
-                BEAUTY PRODUCT CATALOG
-              </div>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
-                美容製剤カタログ
-              </h1>
+              <div className="text-sm font-semibold tracking-[0.24em] text-slate-400">BEAUTY PRODUCT CATALOG</div>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">美容製剤カタログ</h1>
               <p className="mt-2 max-w-3xl text-slate-500">
                 商品タップで詳細確認。カテゴリ・価格で比較しながら見積もり一覧へ追加し、そのまま依頼送信まで進められます。
               </p>
@@ -1207,9 +1205,7 @@ export default function App() {
           <div>
             <div className="mb-5 flex flex-col gap-3 rounded-[28px] border border-slate-200 bg-white px-5 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.03)] sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-sm font-semibold tracking-[0.18em] text-slate-400">
-                  CATALOG OVERVIEW
-                </div>
+                <div className="text-sm font-semibold tracking-[0.18em] text-slate-400">CATALOG OVERVIEW</div>
                 <div className="mt-1 text-xl font-bold tracking-tight text-slate-950">
                   {category === "all" ? "全商品一覧" : getCategoryLabel(category)}
                 </div>
